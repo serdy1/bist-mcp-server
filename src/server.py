@@ -38,6 +38,58 @@ def get_bist_stock_info(ticker: str) -> dict:
     except Exception as e:
         return {"error": f"Could not fetch data for {ticker}", "details": str(e)}
 
+@mcp.tool(description="Get analyst recommendations and price targets for a BIST stock")
+def get_analyst_recommendations(ticker: str) -> dict:
+    """Fetch analyst consensus and price targets for a BIST stock."""
+    try:
+        ticker = _ensure_bist_ticker(ticker)
+        stock = yf.Ticker(ticker)
+        info = stock.info
+        
+        current_price = info.get("currentPrice")
+        target_price = info.get("targetMeanPrice")
+        recommendation = info.get("recommendationKey", "N/A")
+        
+        potential_return = None
+        if current_price and target_price:
+            potential_return = round(((target_price - current_price) / current_price) * 100, 2)
+            
+        return {
+            "ticker": ticker,
+            "recommendation": recommendation,
+            "target_mean_price": target_price,
+            "current_price": current_price,
+            "potential_return_percent": potential_return,
+            "currency": info.get("currency", "TRY")
+        }
+    except Exception as e:
+        return {"error": f"Could not fetch recommendations for {ticker}", "details": str(e)}
+
+@mcp.tool(description="Get latest KAP and news titles for a BIST stock")
+def get_bist_news(ticker: str) -> dict:
+    """Fetch aggregated news and KAP announcements from Yahoo Finance feed."""
+    try:
+        ticker = _ensure_bist_ticker(ticker)
+        stock = yf.Ticker(ticker)
+        news_list = stock.news
+        
+        formatted_news = []
+        for item in news_list:
+            formatted_news.append({
+                "title": item.get("title"),
+                "link": item.get("link"),
+                "publisher": item.get("publisher"),
+                "provider_publish_time": item.get("providerPublishTime")
+            })
+            
+        return {
+            "ticker": ticker,
+            "news": formatted_news,
+            "count": len(formatted_news)
+        }
+    except Exception as e:
+        return {"error": f"Could not fetch news for {ticker}", "details": str(e)}
+
 @mcp.tool(description="Get historical price data for a BIST stock over a specified period")
 def get_bist_historical_data(ticker: str, period: str = "1mo", interval: str = "1d") -> dict:
     """Fetch historical BIST stock data.
@@ -128,7 +180,7 @@ def get_bist_daily_change(ticker: str) -> dict:
 def get_server_info() -> dict:
     return {
         "server_name": "BIST Stock Data MCP Server",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "description": "Real-time and historical BIST (Borsa Istanbul) stock data via Yahoo Finance",
         "environment": os.environ.get("ENVIRONMENT", "development"),
         "market": "BIST (Borsa Istanbul)",
