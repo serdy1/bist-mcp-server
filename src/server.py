@@ -180,7 +180,7 @@ def get_bist_daily_change(ticker: str) -> dict:
 def get_server_info() -> dict:
     return {
         "server_name": "BIST Stock Data MCP Server",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "description": "Real-time and historical BIST (Borsa Istanbul) stock data via Yahoo Finance",
         "environment": os.environ.get("ENVIRONMENT", "development"),
         "market": "BIST (Borsa Istanbul)",
@@ -189,7 +189,10 @@ def get_server_info() -> dict:
     }
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
+    # Dynamically bind port using PORT environment variable for Render (default to 10000)
+    port = int(os.environ.get("PORT", 10000))
+    # Bind to 0.0.0.0 to be accessible externally within the container/platform
     host = "0.0.0.0"
     print(f"Starting BIST Stock Data MCP server on {host}:{port}")
-    mcp.run(transport="http", host=host, port=port, stateless_http=True)
+    # Using SSE transport for web deployment
+    mcp.run(transport="sse", host=host, port=port)
